@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useTransactions } from "../../contexts/TransactionContext";
+import { useTransactions } from "@/contexts/TransactionContext";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 
 type TransactionType = "receita" | "despesa";
 type TransactionFrequency = "fixo" | "variavel" | "parcelado";
@@ -136,16 +137,48 @@ export default function TransacoesPage() {
     }
   }, []); // Executado apenas uma vez na montagem do componente
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
+
+    if (name === "valor") {
+      const numericValue = value.replace(/\D/g, "");
+      const formattedValue = (Number(numericValue) / 100).toLocaleString(
+        "pt-BR",
+        {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        },
+      );
+      setFormData({ ...formData, [name]: formattedValue });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+
+    if (name === "tipo") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        categoria:
+          value === "despesa" ? categoriasDespesas[0] : categoriasReceitas[0],
+      }));
+    }
+  };
+
   const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setFormData({
       tipo: transaction.tipo,
       frequencia: transaction.frequencia,
-      descricao: transaction.descricao,
-      valor: transaction.valor.toString(),
+      descricao: transaction.descricao.split(" (")[0],
+      valor: transaction.valor.toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
       categoria: transaction.categoria,
       data: transaction.data,
-      parcelas: transaction.parcelas?.toString() || "1",
+      parcelas: transaction.parcelas?.toString() || "",
     });
     setIsModalOpen(true);
   };
@@ -164,7 +197,6 @@ export default function TransacoesPage() {
     );
     const parcelas = parseInt(formData.parcelas || "1");
 
-    // Se estiver editando, mantém o ID original
     const novaTransacao: Transaction = {
       id: editingTransaction?.id || crypto.randomUUID(),
       tipo: formData.tipo,
@@ -181,7 +213,6 @@ export default function TransacoesPage() {
         novaTransacao.parcelaAtual = 1;
         novaTransacao.valorParcela = valor / parcelas;
 
-        // Criar todas as parcelas distribuídas nos meses
         const todasParcelas: Transaction[] = Array.from(
           { length: parcelas },
           (_, i) => {
@@ -200,34 +231,28 @@ export default function TransacoesPage() {
 
         await addTransactions(todasParcelas);
       } else {
-        if (editingTransaction) {
-          // Se estiver editando, mantém os dados de parcela se existirem
-          if (editingTransaction.parcelas) {
-            novaTransacao.parcelas = editingTransaction.parcelas;
-            novaTransacao.parcelaAtual = editingTransaction.parcelaAtual;
-            novaTransacao.valorParcela = editingTransaction.valorParcela;
-          }
-          await updateTransaction(novaTransacao);
-        } else {
-          await addTransaction(novaTransacao);
-        }
+        await addTransactions([novaTransacao]);
       }
 
       setIsModalOpen(false);
       setEditingTransaction(null);
       setFormData({
-        tipo: activeTab === "receitas" ? "receita" : "despesa",
-        frequencia: activeTab === "parceladas" ? "parcelado" : "variavel",
+        tipo: "despesa",
+        frequencia: "variavel",
         descricao: "",
         valor: "",
-        categoria: "",
+        categoria: "Outros",
         data: new Date().toISOString().slice(0, 10),
         parcelas: "1",
       });
     } catch (error) {
       console.error("Erro ao salvar transação:", error);
-      alert("Erro ao salvar a transação. Por favor, tente novamente.");
+      alert("Erro ao salvar transação. Tente novamente.");
     }
+  };
+
+  const formatarData = (data: string) => {
+    return new Date(data).toLocaleDateString("pt-BR");
   };
 
   const formatarValor = (valor: number) => {
@@ -237,16 +262,11 @@ export default function TransacoesPage() {
     });
   };
 
-  const formatarData = (data: string) => {
-    return new Date(data).toLocaleDateString("pt-BR");
-  };
-
   const TransactionCard = ({
     transaction,
   }: {
     transaction: Transaction & { id: string };
   }) => {
-    // Função para agrupar parcelas da mesma compra
     const agruparParcelas = (t: Transaction) => {
       if (t.frequencia !== "parcelado") return null;
 
@@ -307,38 +327,41 @@ export default function TransacoesPage() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <p
-                className={`text-lg font-semibold ${
-                  transaction.tipo === "receita"
-                    ? "text-green-400"
-                    : "text-red-400"
-                }`}
-              >
-                {formatarValor(valorExibicao)}
-                {parcelasInfo && (
-                  <span className="block text-sm text-slate-400">
-                    Total: {formatarValor(parcelasInfo.valorTotal)}
-                  </span>
-                )}
-              </p>
-            </div>
+            <span
+              className={`text-lg font-medium ${
+                transaction.tipo === "receita"
+                  ? "text-emerald-400"
+                  : "text-red-400"
+              }`}
+            >
+              {transaction.tipo === "receita" ? "+" : "-"}
+              {formatarValor(valorExibicao)}
+            </span>
             <div className="flex space-x-2">
               <button
                 onClick={() => handleEdit(transaction)}
-                className="rounded-lg bg-blue-500 px-3 py-1 text-sm text-white hover:bg-blue-600 transition-colors"
+                className="rounded p-1 text-slate-400 hover:bg-slate-600 hover:text-white"
               >
-                Editar
+                <FiEdit2 size={16} />
               </button>
               <button
                 onClick={() => handleDelete(transaction.id)}
-                className="rounded-lg bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600 transition-colors"
+                className="rounded p-1 text-slate-400 hover:bg-slate-600 hover:text-red-400"
               >
-                Remover
+                <FiTrash2 size={16} />
               </button>
             </div>
           </div>
         </div>
+        {parcelasInfo && (
+          <div className="mt-2 text-sm text-slate-400">
+            <span>
+              Valor total: {formatarValor(parcelasInfo.valorTotal)} em{" "}
+              {parcelasInfo.totalParcelas}x de{" "}
+              {formatarValor(parcelasInfo.valorParcela)}
+            </span>
+          </div>
+        )}
       </div>
     );
   };
@@ -350,11 +373,9 @@ export default function TransacoesPage() {
     title: string;
     transactions: Transaction[];
   }) => {
-    // Para compras parceladas, filtra apenas uma ocorrência de cada compra
     const filteredTransactions = transactions.filter((t) => {
       if (t.frequencia !== "parcelado") return true;
 
-      // Pega apenas a primeira parcela de cada compra parcelada
       const descricaoBase = t.descricao.split(" (")[0];
       const todasParcelas = transactions.filter(
         (p) => p.descricao.split(" (")[0] === descricaoBase,
@@ -395,7 +416,7 @@ export default function TransacoesPage() {
           <div className="flex items-center space-x-4">
             <Link
               href="/home"
-              className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 flex items-center"
+              className="flex items-center rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600"
             >
               <span className="mr-2">←</span>
               Voltar
@@ -506,7 +527,7 @@ export default function TransacoesPage() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-full max-w-md rounded-lg bg-slate-800 p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-white">
                 {editingTransaction ? "Editar Transação" : "Nova Transação"}
               </h2>
@@ -528,15 +549,10 @@ export default function TransacoesPage() {
                     Tipo
                   </label>
                   <select
+                    name="tipo"
                     value={formData.tipo}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        tipo: e.target.value as TransactionType,
-                      })
-                    }
+                    onChange={handleInputChange}
                     className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white"
-                    disabled={!!editingTransaction}
                   >
                     <option value="despesa">Despesa</option>
                     <option value="receita">Receita</option>
@@ -547,19 +563,14 @@ export default function TransacoesPage() {
                     Frequência
                   </label>
                   <select
+                    name="frequencia"
                     value={formData.frequencia}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        frequencia: e.target.value as TransactionFrequency,
-                      })
-                    }
+                    onChange={handleInputChange}
                     className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white"
-                    required
                   >
-                    <option value="fixo">Fixa</option>
                     <option value="variavel">Variável</option>
-                    <option value="parcelado">Parcelada</option>
+                    <option value="fixo">Fixo</option>
+                    <option value="parcelado">Parcelado</option>
                   </select>
                 </div>
               </div>
@@ -570,10 +581,9 @@ export default function TransacoesPage() {
                 </label>
                 <input
                   type="text"
+                  name="descricao"
                   value={formData.descricao}
-                  onChange={(e) =>
-                    setFormData({ ...formData, descricao: e.target.value })
-                  }
+                  onChange={handleInputChange}
                   className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white"
                   required
                 />
@@ -584,14 +594,11 @@ export default function TransacoesPage() {
                   Valor
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  name="valor"
                   value={formData.valor}
-                  onChange={(e) =>
-                    setFormData({ ...formData, valor: e.target.value })
-                  }
+                  onChange={handleInputChange}
                   className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white"
-                  step="0.01"
-                  min="0"
                   required
                 />
               </div>
@@ -601,14 +608,11 @@ export default function TransacoesPage() {
                   Categoria
                 </label>
                 <select
+                  name="categoria"
                   value={formData.categoria}
-                  onChange={(e) =>
-                    setFormData({ ...formData, categoria: e.target.value })
-                  }
+                  onChange={handleInputChange}
                   className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white"
-                  required
                 >
-                  <option value="">Selecione uma categoria</option>
                   {formData.tipo === "despesa"
                     ? categoriasDespesas.map((cat) => (
                         <option key={cat} value={cat}>
@@ -629,10 +633,9 @@ export default function TransacoesPage() {
                 </label>
                 <input
                   type="date"
+                  name="data"
                   value={formData.data}
-                  onChange={(e) =>
-                    setFormData({ ...formData, data: e.target.value })
-                  }
+                  onChange={handleInputChange}
                   className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white"
                   required
                 />
@@ -645,14 +648,12 @@ export default function TransacoesPage() {
                   </label>
                   <input
                     type="number"
-                    min="2"
-                    max="48"
+                    name="parcelas"
                     value={formData.parcelas}
-                    onChange={(e) =>
-                      setFormData({ ...formData, parcelas: e.target.value })
-                    }
+                    onChange={handleInputChange}
                     className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white"
-                    required
+                    min="2"
+                    required={formData.frequencia === "parcelado"}
                   />
                 </div>
               )}

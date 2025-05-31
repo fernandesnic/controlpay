@@ -10,9 +10,8 @@ export async function POST(request: Request) {
   const { email, password } = (await request.json()) as LoginRequest;
 
   if (email === "admin@admin.com" && password === "admin") {
-    const token = "jwt_simulado_" + Date.now(); // Em produção, use uma biblioteca JWT adequada
+    const token = "jwt_simulado_" + Date.now();
 
-    // Configura o cookie com o token
     cookies().set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

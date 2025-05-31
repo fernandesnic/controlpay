@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FiSearch, FiFilter, FiCalendar, FiArrowLeft } from "react-icons/fi";
-import { useTransactions } from "../../contexts/TransactionContext";
+import { useTransactions } from "@/contexts/TransactionContext";
 
 type TransactionType = "receita" | "despesa" | "todas";
 type TransactionFrequency = "fixo" | "variavel" | "parcelado" | "todas";
@@ -39,178 +39,6 @@ const categoriasReceitas = [
   "Outros",
 ];
 
-// Dados simulados (exemplos para cada categoria)
-const transacoesSimuladas: Transaction[] = [
-  // Despesas Fixas
-  {
-    id: "1",
-    tipo: "despesa",
-    frequencia: "fixo",
-    descricao: "Aluguel",
-    valor: 1500,
-    categoria: "Moradia",
-    data: "2024-02-05",
-  },
-  {
-    id: "2",
-    tipo: "despesa",
-    frequencia: "fixo",
-    descricao: "Internet",
-    valor: 120,
-    categoria: "Moradia",
-    data: "2024-02-10",
-  },
-  {
-    id: "3",
-    tipo: "despesa",
-    frequencia: "fixo",
-    descricao: "Academia",
-    valor: 100,
-    categoria: "Saúde",
-    data: "2024-02-15",
-  },
-  {
-    id: "4",
-    tipo: "despesa",
-    frequencia: "fixo",
-    descricao: "Plano de Saúde",
-    valor: 350,
-    categoria: "Saúde",
-    data: "2024-02-05",
-  },
-  {
-    id: "5",
-    tipo: "despesa",
-    frequencia: "fixo",
-    descricao: "Curso de Inglês",
-    valor: 250,
-    categoria: "Educação",
-    data: "2024-02-10",
-  },
-
-  // Despesas Variáveis
-  {
-    id: "6",
-    tipo: "despesa",
-    frequencia: "variavel",
-    descricao: "Supermercado",
-    valor: 850,
-    categoria: "Alimentação",
-    data: "2024-02-15",
-  },
-  {
-    id: "7",
-    tipo: "despesa",
-    frequencia: "variavel",
-    descricao: "Uber",
-    valor: 150,
-    categoria: "Transporte",
-    data: "2024-02-18",
-  },
-  {
-    id: "8",
-    tipo: "despesa",
-    frequencia: "variavel",
-    descricao: "Cinema",
-    valor: 80,
-    categoria: "Lazer",
-    data: "2024-02-20",
-  },
-  {
-    id: "9",
-    tipo: "despesa",
-    frequencia: "variavel",
-    descricao: "Farmácia",
-    valor: 120,
-    categoria: "Saúde",
-    data: "2024-02-22",
-  },
-  {
-    id: "10",
-    tipo: "despesa",
-    frequencia: "variavel",
-    descricao: "Livros",
-    valor: 150,
-    categoria: "Educação",
-    data: "2024-02-25",
-  },
-
-  // Despesas Parceladas
-  {
-    id: "11",
-    tipo: "despesa",
-    frequencia: "parcelado",
-    descricao: "Notebook",
-    valor: 4800,
-    valorParcela: 400,
-    categoria: "Outros",
-    data: "2024-02-05",
-    parcelas: 12,
-    parcelaAtual: 1,
-  },
-  {
-    id: "12",
-    tipo: "despesa",
-    frequencia: "parcelado",
-    descricao: "Geladeira",
-    valor: 3600,
-    valorParcela: 300,
-    categoria: "Moradia",
-    data: "2024-02-10",
-    parcelas: 12,
-    parcelaAtual: 1,
-  },
-
-  // Receitas Fixas
-  {
-    id: "13",
-    tipo: "receita",
-    frequencia: "fixo",
-    descricao: "Salário",
-    valor: 5000,
-    categoria: "Salário",
-    data: "2024-02-05",
-  },
-  {
-    id: "14",
-    tipo: "receita",
-    frequencia: "fixo",
-    descricao: "Aluguel de Imóvel",
-    valor: 1200,
-    categoria: "Investimentos",
-    data: "2024-02-10",
-  },
-
-  // Receitas Variáveis
-  {
-    id: "15",
-    tipo: "receita",
-    frequencia: "variavel",
-    descricao: "Projeto Freelance",
-    valor: 2500,
-    categoria: "Freelance",
-    data: "2024-02-15",
-  },
-  {
-    id: "16",
-    tipo: "receita",
-    frequencia: "variavel",
-    descricao: "Venda de Produtos Usados",
-    valor: 500,
-    categoria: "Vendas",
-    data: "2024-02-20",
-  },
-  {
-    id: "17",
-    tipo: "receita",
-    frequencia: "variavel",
-    descricao: "Dividendos",
-    valor: 300,
-    categoria: "Investimentos",
-    data: "2024-02-25",
-  },
-];
-
 export default function HistoricoPage() {
   const { transactions } = useTransactions();
   const [searchTerm, setSearchTerm] = useState("");
@@ -240,12 +68,10 @@ export default function HistoricoPage() {
     return transactions.filter((transaction) => {
       const dataTransacao = new Date(transaction.data || "");
 
-      // Para transações parceladas, mostrar apenas as que já venceram
       if (transaction.frequencia === "parcelado" && dataTransacao > hoje) {
         return false;
       }
 
-      // Filtro de pesquisa
       if (
         searchTerm &&
         !transaction.descricao
@@ -256,12 +82,10 @@ export default function HistoricoPage() {
         return false;
       }
 
-      // Filtro de tipo
       if (filtros.tipo !== "todas" && transaction.tipo !== filtros.tipo) {
         return false;
       }
 
-      // Filtro de frequência
       if (
         filtros.frequencia !== "todas" &&
         transaction.frequencia !== filtros.frequencia
@@ -269,7 +93,6 @@ export default function HistoricoPage() {
         return false;
       }
 
-      // Filtro de categoria
       if (
         filtros.categoria !== "todas" &&
         transaction.categoria !== filtros.categoria
@@ -277,7 +100,6 @@ export default function HistoricoPage() {
         return false;
       }
 
-      // Filtro de data
       if (filtros.dataInicio && dataTransacao < new Date(filtros.dataInicio)) {
         return false;
       }
@@ -291,7 +113,6 @@ export default function HistoricoPage() {
 
   const transacoesFiltradas = filtrarTransacoes();
 
-  // Agrupar transações parceladas
   const agruparTransacoes = (transacoes: Transaction[]) => {
     const grupos = new Map<string, Transaction[]>();
 
@@ -333,7 +154,7 @@ export default function HistoricoPage() {
           <div className="flex items-center space-x-4">
             <Link
               href="/home"
-              className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 flex items-center"
+              className="flex items-center rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600"
             >
               <span className="mr-2">
                 <FiArrowLeft size={16} color="white" />
@@ -357,7 +178,7 @@ export default function HistoricoPage() {
               placeholder="Pesquisar transações..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg bg-slate-700 pl-10 pr-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full rounded-lg bg-slate-700 py-2 pl-10 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
           <button
@@ -450,7 +271,7 @@ export default function HistoricoPage() {
                     onChange={(e) =>
                       setFiltros({ ...filtros, dataInicio: e.target.value })
                     }
-                    className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 pl-10 pr-3 py-2 text-white"
+                    className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 py-2 pl-10 pr-3 text-white"
                   />
                 </div>
               </div>
@@ -469,7 +290,7 @@ export default function HistoricoPage() {
                     onChange={(e) =>
                       setFiltros({ ...filtros, dataFim: e.target.value })
                     }
-                    className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 pl-10 pr-3 py-2 text-white"
+                    className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-700 py-2 pl-10 pr-3 text-white"
                   />
                 </div>
               </div>
@@ -547,7 +368,7 @@ export default function HistoricoPage() {
             ))}
 
             {transacoesProcessadas.length === 0 && (
-              <div className="text-center py-8">
+              <div className="py-8 text-center">
                 <p className="text-slate-400">Nenhuma transação encontrada</p>
               </div>
             )}
