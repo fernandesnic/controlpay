@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+package-lock.json
+yarn.lock
+
+# Testing
+/coverage
+.nyc_output
+junit.xml
+
+# Next.js
+/.next/
+/out/
+next-env.d.ts
+.next/
+build/
+dist/
+
+# Production
+/build
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Misc
+.DS_Store
+*.pem
+.vercel
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# TypeScript
+*.tsbuildinfo
+
+# PWA / Service Worker
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+
+# Cache
+.eslintcache
+.cache/
+tsconfig.tsbuildinfo 
