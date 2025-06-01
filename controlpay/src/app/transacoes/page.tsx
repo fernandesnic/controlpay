@@ -159,7 +159,7 @@ export default function TransacoesPage() {
     if (name === "tipo") {
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        tipo: value as "receita" | "despesa",
         categoria:
           value === "despesa" ? categoriasDespesas[0] : categoriasReceitas[0],
       }));
@@ -208,7 +208,22 @@ export default function TransacoesPage() {
     };
 
     try {
-      if (formData.frequencia === "parcelado" && !editingTransaction) {
+      if (editingTransaction) {
+        // Se estiver editando, usa updateTransaction
+        const transacaoAtualizada: Transaction = {
+          ...novaTransacao,
+          id: editingTransaction.id,
+          valor: Number(
+            formData.valor.replace(/[^\d,]/g, "").replace(",", "."),
+          ),
+          data: formData.data,
+          parcelas: formData.parcelas ? Number(formData.parcelas) : undefined,
+          parcelaAtual: editingTransaction.parcelaAtual || undefined,
+          valorParcela: editingTransaction.valorParcela || undefined,
+        };
+        console.log("Atualizando transação:", transacaoAtualizada);
+        await updateTransaction(transacaoAtualizada);
+      } else if (formData.frequencia === "parcelado") {
         novaTransacao.parcelas = parcelas;
         novaTransacao.parcelaAtual = 1;
         novaTransacao.valorParcela = valor / parcelas;
@@ -380,7 +395,7 @@ export default function TransacoesPage() {
       const todasParcelas = transactions.filter(
         (p) => p.descricao.split(" (")[0] === descricaoBase,
       );
-      return t.id === todasParcelas[0].id;
+      return todasParcelas.length > 0 && t.id === todasParcelas[0].id;
     });
 
     return (
